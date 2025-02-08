@@ -9,12 +9,12 @@ extern "C" {
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
-
+#include <sys/queue.h>
 #include <event.h>
 
 
 struct event_op;
-struct evsig_info;
+struct evsig_info{int summy;};
 struct min_heap;
 
 
