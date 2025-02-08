@@ -6,6 +6,7 @@
 #include <sys/time.h>
 #include "log.h"
 #include "event.h"
+#include "evutil.h"
 
 static void _warn_helper(int severity, int log_errno, const char *fmt,
                          va_list ap);

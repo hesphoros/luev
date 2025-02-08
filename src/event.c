@@ -5,6 +5,7 @@
 #include "epoll.h"
 #include <stdio.h>
 #include <time.h>
+#include "min_heap.h"
 
 static const struct eventop * eventops[] = {
 	&epollops,
@@ -28,12 +29,39 @@ volatile sig_atomic_t event_gotsig;	/* Set in signal handler */
 
 /** Function defineations Area */
 static void detect_monotonic(void);
+static int gettime(struct event_base *base, struct timeval *tp);
 /* Prototypes */
 static void	event_queue_insert(struct event_base *, struct event *, int);
 // 定义一个函数 event_init，用于初始化事件基础结构
 // 函数返回类型为 struct event_base*，即指向 event_base 结构体的指针
 struct event_base *event_init(void){
 
+}
+
+
+
+static int
+gettime(struct event_base *base, struct timeval *tp)
+{
+	if (base->tv_cache.tv_sec) {
+		*tp = base->tv_cache;
+		return (0);
+	}
+
+
+	if (use_monotonic) {
+		struct timespec	ts;
+
+		if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1)
+			return (-1);
+
+		tp->tv_sec = ts.tv_sec;
+		tp->tv_usec = ts.tv_nsec / 1000;
+		return (0);
+	}
+
+
+	return (evutil_gettimeofday(tp, NULL));
 }
 
 
@@ -132,7 +160,7 @@ event_queue_insert(struct event_base *base, struct event *ev, int queue)
 			return;
 
 		event_errx(1, "%s: %p(fd %d) already on queue %x", __func__,
-			   ev, ev->ev_fd, queue);
+			   (void* )ev, ev->ev_fd, queue);
 	}
 
 	if (~ev->ev_flags & EVLIST_INTERNAL)
@@ -155,4 +183,67 @@ event_queue_insert(struct event_base *base, struct event *ev, int queue)
 	default:
 		event_errx(1, "%s: unknown queue %x", __func__, queue);
 	}
+}
+
+
+
+
+
+int
+event_base_priority_init(struct event_base *base, int npriorities)
+{
+	int i;
+
+	if (base->event_count_active)
+		return (-1);
+
+	if (npriorities == base->nactivequeues)
+		return (0);
+
+	if (base->nactivequeues) {
+		for (i = 0; i < base->nactivequeues; ++i) {
+			free(base->activequeues[i]);
+		}
+		free(base->activequeues);
+	}
+
+	/* Allocate our priority queues */
+	base->nactivequeues = npriorities;
+	base->activequeues = (struct event_list **)
+	    calloc(base->nactivequeues, sizeof(struct event_list *));
+	if (base->activequeues == NULL)
+		event_err(1, "%s: calloc", __func__);
+
+	for (i = 0; i < base->nactivequeues; ++i) {
+		base->activequeues[i] = malloc(sizeof(struct event_list));
+		if (base->activequeues[i] == NULL)
+			event_err(1, "%s: malloc", __func__);
+		TAILQ_INIT(base->activequeues[i]);
+	}
+
+	return (0);
+}
+
+
+void
+event_set(struct event *ev, int fd, short events,
+	  void (*callback)(int, short, void *), void *arg)
+{
+	/* Take the current base - caller needs to set the real base later */
+	ev->ev_base = current_base;
+
+	ev->ev_callback = callback;
+	ev->ev_arg = arg;
+	ev->ev_fd = fd;
+	ev->ev_events = events;
+	ev->ev_res = 0;
+	ev->ev_flags = EVLIST_INIT;
+	ev->ev_ncalls = 0;
+	ev->ev_pncalls = NULL;
+
+	min_heap_elem_init(ev);
+
+	/* by default, we put new events into the middle priority */
+	if(current_base)
+		ev->ev_pri = current_base->nactivequeues/2;
 }

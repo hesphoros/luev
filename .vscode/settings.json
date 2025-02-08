@@ -47,6 +47,7 @@
         "ostream": "c",
         "inttypes.h": "c",
         "stdalign.h": "c",
-        "cstdarg": "c"
+        "cstdarg": "c",
+        "min_heap.h": "c"
     }
 }

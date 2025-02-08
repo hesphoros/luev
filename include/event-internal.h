@@ -13,7 +13,7 @@ extern "C" {
 #include "event.h"
 #include "evsignal.h"
 
-
+#include "min_heap.h"
 struct eventop{
     const char *name;
 	void *(*init)(struct event_base *);//初始化
@@ -26,7 +26,7 @@ struct eventop{
 };
 
 
-struct min_heap{int summy;};
+
 
 
 struct event_base{
@@ -41,7 +41,7 @@ struct event_base{
     /* Set to terminate loop immediately*/
     int event_break;
     /* active event management */
-	struct event_llist **activequeues;
+	struct event_list **activequeues;
     int nactivequeues;
 
     /*Signal handing info  */

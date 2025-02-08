@@ -40,7 +40,7 @@ struct event {
 	TAILQ_ENTRY (event) ev_signal_next;
 
     //最小时间堆索引
-    unsigned int min_heap_index;
+    unsigned int min_heap_idx;
     //事件基
     struct event_base *ev_base;
     //文件描述符 or 信号
@@ -108,6 +108,10 @@ struct event_base *event_init(void);
  */
 void event_base_free(struct event_base *);
 
+
+int event_base_priority_init(struct event_base *base, int npriorities);
+
+void event_set(struct event *ev, int fd, short events,void (*callback)(int, short, void *), void *arg);
 
 
 void event_active(struct event *ev, int res, short ncalls);

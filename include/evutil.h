@@ -67,7 +67,11 @@ int evutil_make_socket_nonblocking(int fd);
 #define evutil_timeradd(tvp, uvp, vvp) timeradd((tvp), (uvp), (vvp))
 #define evutil_timersub(tvp, uvp, vvp) timersub((tvp), (uvp), (vvp))
 #define evutil_timerclear(tvp)          timerclear(tvp)
-#define	evutil_timercmp(tvp, uvp, cmp) timercmp((tvp), (uvp), (cmp))
+#define	evutil_timercmp(tvp, uvp, cmp)							\
+	(((tvp)->tv_sec == (uvp)->tv_sec) ?							\
+	 ((tvp)->tv_usec cmp (uvp)->tv_usec) :						\
+	 ((tvp)->tv_sec cmp (uvp)->tv_sec))
+
 #define evutil_timerisset(tvp) timerisset(tvp)
 #define evutil_gettimeofday(tv, tz) gettimeofday((tv), (tz))
 

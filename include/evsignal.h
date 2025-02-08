@@ -43,7 +43,7 @@ void evsignal_dealloc(struct event_base *);
     if (fcntl(x, F_SETFD, FD_CLOEXEC) == -1) \
             event_warn("fcntl(%d, F_SETFD)", x); \
 } while (0)
-
+#define error_is_eagain(err) ((err) == EAGAIN)
 
 
 #ifdef __cplusplus
