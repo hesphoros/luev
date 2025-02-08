@@ -5,7 +5,6 @@
 #include <errno.h>
 #include <sys/time.h>
 #include "log.h"
-#include "sys/__luev_time.h"
 #include "event.h"
 
 static void _warn_helper(int severity, int log_errno, const char *fmt,

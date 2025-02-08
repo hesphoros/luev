@@ -6,7 +6,6 @@ extern "C" {
 #endif
 
 
-
 #include <sys/types.h>
 
 #define	TIMEVAL_TO_TIMESPEC(tv, ts) {					\
@@ -39,7 +38,7 @@ struct timezone {
 #define	timerclear(tvp)		(tvp)->tv_sec = (tvp)->tv_usec = 0
 #define	timerisset(tvp)		((tvp)->tv_sec || (tvp)->tv_usec)
 #define	timercmp(tvp, uvp, cmp)						\
-	(((tvp)->tv_sec == (uvp)->tv_sec) ?				\
+		(((tvp)->tv_sec == (uvp)->tv_sec) ?				\
 	    ((tvp)->tv_usec cmp (uvp)->tv_usec) :			\
 	    ((tvp)->tv_sec cmp (uvp)->tv_sec))
 #define	timeradd(tvp, uvp, vvp)						\
@@ -96,10 +95,10 @@ struct timezone {
 #define	ITIMER_VIRTUAL	1
 #define	ITIMER_PROF	2
 
-struct	itimerval {
-	struct	timeval it_interval;	/* timer interval */
-	struct	timeval it_value;	/* current value */
-};
+// struct	itimerval {
+// 	struct	timeval it_interval;	/* timer interval */
+// 	struct	timeval it_value;	/* current value */
+// };
 
 /*
  * Getkerninfo clock information structure

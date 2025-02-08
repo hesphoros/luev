@@ -99,11 +99,23 @@ struct event_base *event_base_new(void);
  */
 struct event_base *event_init(void);
 
+
+/**
+    解除与 event_base 关联的所有内存分配，并释放该基址。
+
+    请注意，此函数不会关闭任何 fds 或释放作为回调参数传递给 event_set 的任何内存。
+  @param eb an event_base to be freed
+ */
+void event_base_free(struct event_base *);
+
+
+
+void event_active(struct event *ev, int res, short ncalls);
 #define _EVENT_LOG_DEBUG 0
 #define _EVENT_LOG_MSG   1
 #define _EVENT_LOG_WARN  2
 #define _EVENT_LOG_ERR   3
-
+typedef void (*event_log_cb)(int severity, const char *msg);
 
 #ifdef __cplusplus
 }

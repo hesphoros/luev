@@ -4,11 +4,20 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#include <signal.h>
 #include "event.h"
 #include <sys/signalfd.h>
 #include <sys/signal.h>
-#include <signal.h>
+
+
+#ifndef NSIG
+#ifdef _NSIG
+#define NSIG _NSIG
+#else
+#define NSIG 32
+#endif
+#endif
+
 
 struct event;
 
@@ -23,11 +32,19 @@ struct evsignal_info {
     int sh_old_max;                          // sh_old 数组的容量
 };
 
-int evsignal_init(struct event_base *);
+int     evsignal_init(struct event_base *);
 void evsignal_process(struct event_base *);
 int evsignal_add(struct event *);
 int evsignal_del(struct event *);
 void evsignal_dealloc(struct event_base *);
+
+
+#define FD_CLOSEONEXEC(x) do { \
+    if (fcntl(x, F_SETFD, FD_CLOEXEC) == -1) \
+            event_warn("fcntl(%d, F_SETFD)", x); \
+} while (0)
+
+
 
 #ifdef __cplusplus
 }

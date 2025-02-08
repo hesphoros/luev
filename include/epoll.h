@@ -10,7 +10,6 @@ extern "C" {
 #include <sys/epoll.h>
 #include <sys/resource.h>
 #include <sys/time.h>
-#include "sys/__luev_time.h"
 #include <sys/queue.h>
 #include <signal.h>
 #include <stdio.h>
@@ -56,21 +55,8 @@ static void epoll_dealloc	(struct event_base *, void *);
 
 
 
-const struct eventop epollops = {
-	"epoll",
-	epoll_init,
-	epoll_add,
-	epoll_del,
-	epoll_dispatch,
-	epoll_dealloc,
-	1 /* need reinit */
-};
 
-
-#define FD_CLOSEONEXEC(x) do { \
-        if (fcntl(x, F_SETFD, 1) == -1) \
-                event_warn("fcntl(%d, F_SETFD)", x); \
-} while (0)
+extern const struct eventop epollops;
 
 
 /* On Linux kernels at least up to 2.6.24.4, epoll can't handle timeout

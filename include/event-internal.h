@@ -40,6 +40,8 @@ struct event_base{
     int event_gotterm;
     /* Set to terminate loop immediately*/
     int event_break;
+    /* active event management */
+	struct event_llist **activequeues;
     int nactivequeues;
 
     /*Signal handing info  */
