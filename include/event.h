@@ -9,9 +9,28 @@ extern "C" {
 #include <sys/queue.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <sys/time.h>
+
+#define EVLIST_TIMEOUT	0x01
+#define EVLIST_INSERTED	0x02
+#define EVLIST_SIGNAL	0x04
+#define EVLIST_ACTIVE	0x08
+#define EVLIST_INTERNAL	0x10
+#define EVLIST_INIT	0x80
+
+/* EVLIST_X_ Private space: 0x1000-0xf000 */
+#define EVLIST_ALL	(0xf000 | 0x9f)
+
+#define EV_TIMEOUT	0x01
+#define EV_READ		0x02
+#define EV_WRITE	0x04
+#define EV_SIGNAL	0x08
+#define EV_PERSIST	0x10	/* Persistant event */
+
 
 struct event_base;
-
+TAILQ_HEAD (event_list, event);
 struct event {
     // 已注册事件链表
     TAILQ_ENTRY (event) ev_next;
@@ -32,7 +51,7 @@ struct event {
     // 事件就绪执行时，调用 ev_callback 的次数 通常为1
 	short ev_ncalls;
 	// 指向 ev_ncalls 的指针，用于在回调函数中删除事件
-	short *ev_pncalls;	
+	short *ev_pncalls;
 
 	struct timeval ev_timeout;
 
@@ -58,6 +77,33 @@ struct event {
 	int ev_flags;
 
 };
+
+
+/**
+  Initialize the event API.
+
+  使用 event_base_new() 初始化新的事件库，但不设置 current_base 全局变量。
+  如果仅使用 event_base_new()，则添加的每个事件都必须使用 event_base_set() 设置事件库。
+  @see event_base_set(), event_base_free(), event_init()
+ */
+struct event_base *event_base_new(void);
+
+
+/**
+  Initialize the event API.
+
+  事件 API 需要先使用 event_init() 进行初始化，然后才能使用。
+  设置 current_base 全局变量，表示没有关联基础的事件的默认基础。
+
+  @see event_base_set(), event_base_new()
+ */
+struct event_base *event_init(void);
+
+#define _EVENT_LOG_DEBUG 0
+#define _EVENT_LOG_MSG   1
+#define _EVENT_LOG_WARN  2
+#define _EVENT_LOG_ERR   3
+
 
 #ifdef __cplusplus
 }
