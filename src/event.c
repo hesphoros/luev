@@ -35,7 +35,12 @@ static void	event_queue_insert(struct event_base *, struct event *, int);
 // 定义一个函数 event_init，用于初始化事件基础结构
 // 函数返回类型为 struct event_base*，即指向 event_base 结构体的指针
 struct event_base *event_init(void){
+	struct event_base *base = event_base_new();
 
+	if (base != NULL)
+		current_base = base;
+
+	return (base);
 }
 
 
@@ -128,8 +133,11 @@ detect_monotonic(void)
 
 	struct timespec ts;
 
-	if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
+	if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0){
 		use_monotonic = 1;
+		event_msgx("Using monotonic clock for gettimeofday\n");
+		printf("Using monotonic clock for gettimeofday\n");
+	}
 
 }
 
@@ -189,6 +197,8 @@ event_queue_insert(struct event_base *base, struct event *ev, int queue)
 
 
 
+
+
 int
 event_base_priority_init(struct event_base *base, int npriorities)
 {
@@ -223,6 +233,7 @@ event_base_priority_init(struct event_base *base, int npriorities)
 
 	return (0);
 }
+
 
 
 void

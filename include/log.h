@@ -1,10 +1,6 @@
 #ifndef _LOG_H_
 #define _LOG_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef __GNUC__
 #define EV_CHECK_FMT(a,b) __attribute__((format(printf, a, b)))
 #else
@@ -23,10 +19,7 @@ void _event_debugx(const char *fmt, ...) EV_CHECK_FMT(1,2);
 #else
 #define event_debug(x) do {;} while (0)
 #endif
+
 #undef EV_CHECK_FMT
 
-#ifdef __cplusplus
-}
 #endif
-
-#endif /* _LOG_H_ */

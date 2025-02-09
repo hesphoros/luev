@@ -4,7 +4,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#define _XOPEN_SOURCE 700
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,13 +15,15 @@ extern "C" {
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <sys/signal.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+
+#define HAVE_SIGACTION
+
 
 #ifdef __cplusplus
 }

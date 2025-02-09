@@ -48,6 +48,17 @@
         "inttypes.h": "c",
         "stdalign.h": "c",
         "cstdarg": "c",
-        "min_heap.h": "c"
+        "min_heap.h": "c",
+        "limits": "c",
+        "semaphore": "c",
+        "algorithm": "c",
+        "in.h": "c",
+        "fcntl.h": "c",
+        "*.inc": "c",
+        "stat.h": "c",
+        "wait.h": "c",
+        "optional": "c",
+        "env_config.h": "c",
+        "error.h": "c"
     }
 }
