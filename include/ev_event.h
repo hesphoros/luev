@@ -114,12 +114,60 @@ int event_base_priority_init(struct event_base *base, int npriorities);
 void event_set(struct event *ev, int fd, short events,void (*callback)(int, short, void *), void *arg);
 
 
+
+/**
+    从受监控事件集中删除一个事件。
+
+    函数 event_del() 将取消参数 ev 中的事件。如果
+    事件已执行或从未添加，则调用将不会产生
+    效果。
+
+  @param ev an event struct to be removed from the working set
+  @return 0 if successful, or -1 if an error occurred
+  @see event_add()
+ */
+int event_del(struct event *);
+
 void event_active(struct event *ev, int res, short ncalls);
+
 #define _EVENT_LOG_DEBUG 0
 #define _EVENT_LOG_MSG   1
 #define _EVENT_LOG_WARN  2
 #define _EVENT_LOG_ERR   3
 typedef void (*event_log_cb)(int severity, const char *msg);
+
+
+#define EVENT_SIGNAL(ev)	(int)(ev)->ev_fd
+#define EVENT_FD(ev)		(int)(ev)->ev_fd
+
+
+/**
+ 将事件添加到受监控事件集。
+
+    函数 event_add() 会在 event_set() 中指定的事件发生时或至少在 tv 中
+    指定的时间内安排执行 ev 事件。如果 tv 为 NULL，则不会发生超时，
+    并且只有当文件描述符上发生匹配事件时才会调用该函数。
+    ev 参数中的事件必须已由 event_set() 初始化，
+    并且不能在对 event_set() 的调用中使用，直到它超时或被 event_del()
+    删除如果 ev 参数中的事件已经安排了超时，则旧的超时将被新的超时替换。
+
+  @param ev an event struct initialized via event_set()
+  @param timeout the maximum amount of time to wait for the event, or NULL
+         to wait forever
+  @return 0 if successful, or -1 if an error occurred
+  @see event_del(), event_set()
+  */
+ int event_add(struct event *ev, const struct timeval *timeout);
+
+
+
+/**
+  Add a timer event.
+
+  @param ev the event struct
+  @param tv timeval struct
+ */
+#define evtimer_add(ev, tv)		event_add(ev, tv)
 
 #ifdef __cplusplus
 }

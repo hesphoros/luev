@@ -6,9 +6,13 @@
 #include <stdarg.h>
 #include <string.h>
 #include <errno.h>
-#include "log.h"
-#include "event.h"
-#include "evutil.h"
+#include "ev_log.h"
+#include "ev_event.h"
+#include "ev_util.h"
+
+static void _warn_helper(int severity, int log_errno, const char *fmt,
+                         va_list ap);
+static void event_log(int severity, const char *msg);
 
 static void _warn_helper(int severity, int log_errno, const char *fmt,
                          va_list ap);

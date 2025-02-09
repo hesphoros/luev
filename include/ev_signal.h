@@ -5,9 +5,8 @@
 extern "C" {
 #endif
 #include <signal.h>
-#include "event.h"
-#include <sys/signalfd.h>
-#include <sys/signal.h>
+#include "ev_event.h"
+
 
 
 #ifndef NSIG
@@ -32,11 +31,16 @@ struct evsignal_info {
     int sh_old_max;                          // sh_old 数组的容量
 };
 
+
+
+typedef int sig_atomic_t;
+
+
 int     evsignal_init(struct event_base *);
-void evsignal_process(struct event_base *);
-int evsignal_add(struct event *);
-int evsignal_del(struct event *);
-void evsignal_dealloc(struct event_base *);
+void    evsignal_process(struct event_base *);
+int     evsignal_add(struct event *);
+int     evsignal_del(struct event *);
+void    evsignal_dealloc(struct event_base *);
 
 
 #define FD_CLOSEONEXEC(x) do { \

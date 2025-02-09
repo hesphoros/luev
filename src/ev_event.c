@@ -1,11 +1,18 @@
-#include "event.h"
-#include "event-internal.h"
+#include "env_config.h"
+#include "ev_event.h"
+#include "ev_event-internal.h"
 #include <unistd.h>
 #include "signal.h"
-#include "epoll.h"
 #include <stdio.h>
 #include <time.h>
-#include "min_heap.h"
+#include "ev_min_heap.h"
+#include <assert.h>
+#include "ev_log.h"
+
+// extern const struct eventop selectops;
+// extern const struct eventop pollops;
+extern const struct eventop epollops;
+
 
 static const struct eventop * eventops[] = {
 	&epollops,
@@ -16,10 +23,13 @@ static const struct eventop * eventops[] = {
 /* Global state */
 struct event_base *current_base = NULL;
 extern struct event_base *evsignal_base;
+/** 控制是否使用CLOCK_MONOTONIC 作为时间源*/
 static int use_monotonic;
-
-
-
+//TODO:
+/**Prototypes */
+static void	event_queue_insert(struct event_base *, struct event *, int);
+static void	event_queue_remove(struct event_base *, struct event *, int);
+static int	event_haveevents(struct event_base *);
 /* Handle signals - This is a deprecated interface */
 
 /* 当 gotsig 设置时发出信号回调 */
@@ -30,8 +40,7 @@ volatile sig_atomic_t event_gotsig;	/* Set in signal handler */
 /** Function defineations Area */
 static void detect_monotonic(void);
 static int gettime(struct event_base *base, struct timeval *tp);
-/* Prototypes */
-static void	event_queue_insert(struct event_base *, struct event *, int);
+
 // 定义一个函数 event_init，用于初始化事件基础结构
 // 函数返回类型为 struct event_base*，即指向 event_base 结构体的指针
 struct event_base *event_init(void){
@@ -135,7 +144,7 @@ detect_monotonic(void)
 
 	if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0){
 		use_monotonic = 1;
-		event_msgx("Using monotonic clock for gettimeofday\n");
+		event_msgx("Using monotonic clock for gettimeofday __luev__\n");
 		printf("Using monotonic clock for gettimeofday\n");
 	}
 
@@ -195,6 +204,33 @@ event_queue_insert(struct event_base *base, struct event *ev, int queue)
 
 
 
+void
+event_queue_remove(struct event_base *base, struct event *ev, int queue)
+{
+	if (!(ev->ev_flags & queue))
+		event_errx(1, "%s: %p(fd %d) not on queue %x", __func__,
+			   (void*)ev, ev->ev_fd, queue);
+
+	if (~ev->ev_flags & EVLIST_INTERNAL)
+		base->event_count--;
+
+	ev->ev_flags &= ~queue;
+	switch (queue) {
+	case EVLIST_INSERTED:
+		TAILQ_REMOVE(&base->eventqueue, ev, ev_next);
+		break;
+	case EVLIST_ACTIVE:
+		base->event_count_active--;
+		TAILQ_REMOVE(base->activequeues[ev->ev_pri],
+		    ev, ev_active_next);
+		break;
+	case EVLIST_TIMEOUT:
+		min_heap_erase(&base->timeheap, ev);
+		break;
+	default:
+		event_errx(1, "%s: unknown queue %x", __func__, queue);
+	}
+}
 
 
 
@@ -236,6 +272,8 @@ event_base_priority_init(struct event_base *base, int npriorities)
 
 
 
+
+
 void
 event_set(struct event *ev, int fd, short events,
 	  void (*callback)(int, short, void *), void *arg)
@@ -257,4 +295,174 @@ event_set(struct event *ev, int fd, short events,
 	/* by default, we put new events into the middle priority */
 	if(current_base)
 		ev->ev_pri = current_base->nactivequeues/2;
+}
+
+
+
+int
+event_haveevents(struct event_base *base)
+{
+	return (base->event_count > 0);
+}
+
+
+/**
+ * 活动事件存储在优先级队列中。优先级较低的事件总是先于优先级较高的事件处理。
+ * 优先级较低的事件可能会使优先级较高的事件"挨饿"。
+*/
+static void
+event_process_active(struct event_base *base)
+{
+	struct event *ev;
+	struct event_list *activeq = NULL;
+	int i;
+	short ncalls;
+
+	for (i = 0; i < base->nactivequeues; ++i) {
+		if (TAILQ_FIRST(base->activequeues[i]) != NULL) {
+			activeq = base->activequeues[i];
+			break;
+		}
+	}
+
+	assert(activeq != NULL);
+
+	for (ev = TAILQ_FIRST(activeq); ev; ev = TAILQ_FIRST(activeq)) {
+		if (ev->ev_events & EV_PERSIST)
+			event_queue_remove(base, ev, EVLIST_ACTIVE);
+		else
+			event_del(ev);
+
+		/* Allows deletes to work */
+		ncalls = ev->ev_ncalls;
+		ev->ev_pncalls = &ncalls;
+		while (ncalls) {
+			ncalls--;
+			ev->ev_ncalls = ncalls;
+			(*ev->ev_callback)((int)ev->ev_fd, ev->ev_res, ev->ev_arg);
+			if (base->event_break)
+				return;
+		}
+	}
+}
+
+
+
+int
+event_add(struct event *ev, const struct timeval *tv)
+{
+	struct event_base *base = ev->ev_base;
+	const struct eventop *evsel = base->evsel;
+	void *evbase = base->evbase;
+	int res = 0;
+
+	event_debug((
+		 "event_add: event: %p, %s%s%scall %p",
+		 ev,
+		 ev->ev_events & EV_READ ? "EV_READ " : " ",
+		 ev->ev_events & EV_WRITE ? "EV_WRITE " : " ",
+		 tv ? "EV_TIMEOUT " : " ",
+		 ev->ev_callback));
+
+	assert(!(ev->ev_flags & ~EVLIST_ALL));
+
+	/*
+	 * prepare for timeout insertion further below, if we get a
+	 * failure on any step, we should not change any state.
+	 */
+	if (tv != NULL && !(ev->ev_flags & EVLIST_TIMEOUT)) {
+		if (min_heap_reserve(&base->timeheap,
+			1 + min_heap_size(&base->timeheap)) == -1)
+			return (-1);  /* ENOMEM == errno */
+	}
+
+	if ((ev->ev_events & (EV_READ|EV_WRITE|EV_SIGNAL)) &&
+	    !(ev->ev_flags & (EVLIST_INSERTED|EVLIST_ACTIVE))) {
+		res = evsel->add(evbase, ev);
+		if (res != -1)
+			event_queue_insert(base, ev, EVLIST_INSERTED);
+	}
+
+	/* 
+	 * we should change the timout state only if the previous event
+	 * addition succeeded.
+	 */
+	if (res != -1 && tv != NULL) {
+		struct timeval now;
+
+		/* 
+		 * we already reserved memory above for the case where we
+		 * are not replacing an exisiting timeout.
+		 */
+		if (ev->ev_flags & EVLIST_TIMEOUT)
+			event_queue_remove(base, ev, EVLIST_TIMEOUT);
+
+		/* Check if it is active due to a timeout.  Rescheduling
+		 * this timeout before the callback can be executed
+		 * removes it from the active list. */
+		if ((ev->ev_flags & EVLIST_ACTIVE) &&
+		    (ev->ev_res & EV_TIMEOUT)) {
+			/* See if we are just active executing this
+			 * event in a loop
+			 */
+			if (ev->ev_ncalls && ev->ev_pncalls) {
+				/* Abort loop */
+				*ev->ev_pncalls = 0;
+			}
+
+			event_queue_remove(base, ev, EVLIST_ACTIVE);
+		}
+
+		gettime(base, &now);
+		evutil_timeradd(&now, tv, &ev->ev_timeout);
+
+		event_debug((
+			 "event_add: timeout in %ld seconds, call %p",
+			 tv->tv_sec, ev->ev_callback));
+
+		event_queue_insert(base, ev, EVLIST_TIMEOUT);
+	}
+
+	return (res);
+}
+
+
+int
+event_del(struct event *ev)
+{
+	struct event_base *base;
+	const struct eventop *evsel;
+	void *evbase;
+
+	event_debug(("event_del: %p, callback %p",
+		 ev, ev->ev_callback));
+
+	/* An event without a base has not been added */
+	if (ev->ev_base == NULL)
+		return (-1);
+
+	base = ev->ev_base;
+	evsel = base->evsel;
+	evbase = base->evbase;
+
+	assert(!(ev->ev_flags & ~EVLIST_ALL));
+
+	/* See if we are just active executing this event in a loop */
+	if (ev->ev_ncalls && ev->ev_pncalls) {
+		/* Abort loop */
+		*ev->ev_pncalls = 0;
+	}
+
+	if (ev->ev_flags & EVLIST_TIMEOUT)
+		event_queue_remove(base, ev, EVLIST_TIMEOUT);
+
+	if (ev->ev_flags & EVLIST_ACTIVE)
+		event_queue_remove(base, ev, EVLIST_ACTIVE);
+
+	if (ev->ev_flags & EVLIST_INSERTED) {
+		event_queue_remove(base, ev, EVLIST_INSERTED);
+		return (evsel->del(evbase, ev));
+	}
+
+	return (0);
 }

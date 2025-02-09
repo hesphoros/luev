@@ -22,8 +22,6 @@ extern "C" {
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#define HAVE_SIGACTION
-
 
 #ifdef __cplusplus
 }

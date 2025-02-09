@@ -59,6 +59,17 @@
         "wait.h": "c",
         "optional": "c",
         "env_config.h": "c",
-        "error.h": "c"
+        "error.h": "c",
+        "select.h": "c",
+        "ev_event.h": "c",
+        "set": "c",
+        "assert.h": "c",
+        "ev_event-internal.h": "c",
+        "ev_epoll.h": "c",
+        "ev_util.h": "c",
+        "ev_log.h": "c",
+        "ev_signal.h": "c",
+        "ev_min_heap.h": "c",
+        "ev_common.h": "c"
     }
 }
