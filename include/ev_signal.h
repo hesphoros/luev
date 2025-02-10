@@ -50,6 +50,10 @@ void    evsignal_dealloc(struct event_base *);
 #define error_is_eagain(err) ((err) == EAGAIN)
 
 
+
+void evsignal_process(struct event_base *base);
+
+
 #ifdef __cplusplus
 }
 #endif

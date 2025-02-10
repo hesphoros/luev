@@ -139,31 +139,39 @@ struct event_base *event_base_new(void){
 static void
 detect_monotonic(void)
 {
-
 	struct timespec ts;
 
 	if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0){
 		use_monotonic = 1;
 		event_msgx("Using monotonic clock for gettimeofday __luev__\n");
-		printf("Using monotonic clock for gettimeofday\n");
+		// printf("Using monotonic clock for gettimeofday\n");
 	}
-
 }
 
 
-
+/// @brief 将事件标记为活动状态，并插入到活动队列中
+/// @param ev event_base 结构体的指针
+/// @param res result
+/// @param ncalls number of calls
 void
 event_active(struct event *ev, int res, short ncalls)
 {
 	/* We get different kinds of events, add them together */
+	// 检查事件是否已经在活动列表中
 	if (ev->ev_flags & EVLIST_ACTIVE) {
+		// 如果已经在活动列表中，将新的事件结果与现有结果进行按位或操作
 		ev->ev_res |= res;
+		// 直接返回，不需要再次插入活动队列
 		return;
 	}
 
+
 	ev->ev_res = res;
+
 	ev->ev_ncalls = ncalls;
+
 	ev->ev_pncalls = NULL;
+	// 将事件插入到事件基础结构的活动队列中，并标记为活动状态
 	event_queue_insert(ev->ev_base, ev, EVLIST_ACTIVE);
 }
 
@@ -383,7 +391,7 @@ event_add(struct event *ev, const struct timeval *tv)
 			event_queue_insert(base, ev, EVLIST_INSERTED);
 	}
 
-	/* 
+	/*
 	 * we should change the timout state only if the previous event
 	 * addition succeeded.
 	 */
@@ -463,6 +471,18 @@ event_del(struct event *ev)
 		event_queue_remove(base, ev, EVLIST_INSERTED);
 		return (evsel->del(evbase, ev));
 	}
+
+	return (0);
+}
+
+
+int event_base_set(struct event_base *, struct event *){
+	/* Only innocent events may be assigned to a different base */
+	if (ev->ev_flags != EVLIST_INIT)
+		return (-1);
+
+	ev->ev_base = base;
+	ev->ev_pri = base->nactivequeues/2;
 
 	return (0);
 }

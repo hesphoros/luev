@@ -48,7 +48,7 @@ evsignal_init(struct event_base *base)
 {
 	int i;
 
-	/* 
+	/*
 	 * Our signal handler is going to write to one end of the socket
 	 * pair to wake up our event loop.  The event loop then scans for
 	 * signals that got delivered.

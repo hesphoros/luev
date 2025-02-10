@@ -34,8 +34,8 @@ struct evepoll {
 
 
 /// parma:fds  数组用于跟踪每个文件描述符上的读事件和写事件
-/// param:nfds  fds 数组的大小
-/// param:events  用于存储从 epoll_wait 返回的事件
+/// param nfds  fds 数组的大小
+/// param events  用于存储从 epoll_wait 返回的事件
 /// param:nevents  events 数组的大小 每次调用epoll_wait时最多可以返回的事件数量
 /// param:epfd  epoll 实例的文件描述符
 struct epollop {
@@ -46,7 +46,9 @@ struct epollop {
     int epfd;                  // epoll 实例的文件描述符
 };
 
-
+/// @brief 对封装的epollop进行初始化(epfd events nevents nfds)
+/// @param event_base 需要初始化的event_base实例
+/// @return 成功返回初始化后的epollop实例，失败返回NULL
 static void *epoll_init	(struct event_base *);
 static int epoll_add	(void *, struct event *);
 static int epoll_del	(void *, struct event *);

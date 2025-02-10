@@ -1,7 +1,6 @@
 #include "ev_epoll.h"
 #include "ev_util.h"
-
-void evsignal_process(struct event_base *base);
+#include "ev_signal.h"
 
 const struct eventop epollops = {
 	.name = "epoll",
@@ -60,15 +59,22 @@ static void *
 }
 
 
+// 定义一个静态函数epoll_recalc，用于重新计算epoll相关的数据结构
 static int epoll_recalc(struct event_base *base, void *arg, int max)
 {
+ 
 	UNUSED_PARAM(base);
+    // 将传入的arg参数转换为epollop结构体指针
 	struct epollop *epollop = arg;
 
+    // 检查max是否大于等于当前epollop结构体中的nfds（文件描述符数量）
 	if (max >= epollop->nfds) {
+        // 定义一个指向evepoll结构体的指针fds
 		struct evepoll *fds;
+        // 定义一个整型变量nfds用于存储新的文件描述符数量
 		int nfds;
 
+        // 将当前文件描述符数量赋值给nfds
 		nfds = epollop->nfds;
 		while (nfds <= max)
 			nfds <<= 1;
@@ -88,7 +94,7 @@ static int epoll_recalc(struct event_base *base, void *arg, int max)
 }
 
 
-// 定义一个静态函数epoll_dispatch，用于处理epoll事件
+
 static int
 epoll_dispatch(struct event_base *base, void *arg, struct timeval *tv)
 {

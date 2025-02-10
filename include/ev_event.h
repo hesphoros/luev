@@ -63,8 +63,9 @@ struct event {
 	void (*ev_callback)(int, short, void *arg);
 	void *ev_arg;
 
-    // 记录了当前激活事件的类型
+    //回调函数中传递的结果
 	int ev_res;		/* result passed to event callback */
+
     //标记 event 信息的字段
     /* 可能取值
     * EVLIST_TIMEOUT    // event在time堆中
@@ -106,27 +107,33 @@ struct event_base *event_init(void);
     请注意，此函数不会关闭任何 fds 或释放作为回调参数传递给 event_set 的任何内存。
   @param eb an event_base to be freed
  */
+//TODO: 待完善
 void event_base_free(struct event_base *);
 
 
 int event_base_priority_init(struct event_base *base, int npriorities);
 
+/// @brief 设置事件ev绑定的fd or signal,对于定时事件设为-1即可
+/// @param ev 需要设置的event
+/// @param fd file discriptor or signal
+/// @param events 事件类型（读、写、等）EV_READ|EV_PERSIST, EV_WRITE, EV_SIGNAL
+/// @param callback 回调函数
+/// @param arg 函调函数参数
 void event_set(struct event *ev, int fd, short events,void (*callback)(int, short, void *), void *arg);
 
 
 
+
 /**
-    从受监控事件集中删除一个事件。
+ 将不同的事件库与某个事件关联。
 
-    函数 event_del() 将取消参数 ev 中的事件。如果
-    事件已执行或从未添加，则调用将不会产生
-    效果。
-
-  @param ev an event struct to be removed from the working set
-  @return 0 if successful, or -1 if an error occurred
-  @see event_add()
+  @param eb the event base
+  @param ev the event
  */
-int event_del(struct event *);
+int event_base_set(struct event_base *, struct event *);
+
+/**
+
 
 void event_active(struct event *ev, int res, short ncalls);
 
@@ -160,6 +167,20 @@ typedef void (*event_log_cb)(int severity, const char *msg);
  int event_add(struct event *ev, const struct timeval *timeout);
 
 
+
+
+/**
+    从受监控事件集中删除一个事件。
+
+    函数 event_del() 将取消参数 ev 中的事件。如果
+    事件已执行或从未添加，则调用将不会产生
+    效果。
+
+  @param ev an event struct to be removed from the working set
+  @return 0 if successful, or -1 if an error occurred
+  @see event_add()
+ */
+int event_del(struct event *);
 
 /**
   Add a timer event.
