@@ -21,6 +21,7 @@ static const struct eventop * eventops[] = {
 };
 
 /* Global state */
+//全局event_base 指针
 struct event_base *current_base = NULL;
 extern struct event_base *evsignal_base;
 /** 控制是否使用CLOCK_MONOTONIC 作为时间源*/
@@ -476,13 +477,33 @@ event_del(struct event *ev)
 }
 
 
-int event_base_set(struct event_base *, struct event *){
-	/* Only innocent events may be assigned to a different base */
+int event_base_set(struct event_base *base, struct event *ev){
+	//只有"innocent events"可以被分配到不同的事件基（base）上。
 	if (ev->ev_flags != EVLIST_INIT)
 		return (-1);
 
 	ev->ev_base = base;
+	//初始化默认的优先级
 	ev->ev_pri = base->nactivequeues/2;
 
 	return (0);
 }
+
+
+/*
+ * Set's the priority of an event - if an event is already scheduled
+ * changing the priority is going to fail.
+ */
+
+ int
+ event_priority_set(struct event *ev, int pri)
+ {
+	 if (ev->ev_flags & EVLIST_ACTIVE)
+		 return (-1);
+	 if (pri < 0 || pri >= ev->ev_base->nactivequeues)
+		 return (-1);
+
+	 ev->ev_pri = pri;
+
+	 return (0);
+ }

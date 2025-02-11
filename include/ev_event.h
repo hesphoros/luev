@@ -12,12 +12,12 @@ extern "C" {
 #include <time.h>
 #include <sys/time.h>
 
-#define EVLIST_TIMEOUT	0x01
-#define EVLIST_INSERTED	0x02
-#define EVLIST_SIGNAL	0x04
-#define EVLIST_ACTIVE	0x08
-#define EVLIST_INTERNAL	0x10
-#define EVLIST_INIT	0x80
+#define EVLIST_TIMEOUT	0x01    // event在time堆中
+#define EVLIST_INSERTED	0x02    // event在已注册事件链表中
+#define EVLIST_SIGNAL	0x04    // event在信号事件链表中
+#define EVLIST_ACTIVE	0x08    // event在激活链表中
+#define EVLIST_INTERNAL	0x10    // 内部使用标记
+#define EVLIST_INIT	    0x80    // event初始化标记
 
 /* EVLIST_X_ Private space: 0x1000-0xf000 */
 #define EVLIST_ALL	(0xf000 | 0x9f)
@@ -125,14 +125,15 @@ void event_set(struct event *ev, int fd, short events,void (*callback)(int, shor
 
 
 /**
- 将不同的事件库与某个事件关联。
-
+    设置 event ev 将要注册到的 event_base
+    如果一个进程中存在多个 libevent 实例，
+    则必须要调用该函数为 event 设置不同的 event_base
   @param eb the event base
   @param ev the event
  */
 int event_base_set(struct event_base *, struct event *);
 
-/**
+
 
 
 void event_active(struct event *ev, int res, short ncalls);
@@ -181,6 +182,20 @@ typedef void (*event_log_cb)(int severity, const char *msg);
   @see event_add()
  */
 int event_del(struct event *);
+
+
+
+
+/**
+    为事件分配优先级。
+
+  @param ev an event struct
+  @param priority the new priority to be assigned
+  @return 0 if successful, or -1 if an error occurred
+  @see event_priority_init()
+  */
+ int	event_priority_set(struct event *, int);
+
 
 /**
   Add a timer event.
