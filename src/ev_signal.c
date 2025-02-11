@@ -231,7 +231,7 @@ evsignal_del(struct event *ev)
 	if (!TAILQ_EMPTY(&sig->evsigevents[evsignal]))
 		return (0);
 
-	event_debug(("%s: %p: restoring signal handler", __func__, ev));
+	event_debug(("%s: %p: restoring signal handler", __func__,(void*) ev));
 
 	return (_evsignal_restore_handler(ev->ev_base, EVENT_SIGNAL(ev)));
 }

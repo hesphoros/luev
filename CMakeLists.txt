@@ -21,12 +21,16 @@ file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/src/*.c")
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Wpedantic -g -O0)
     add_compile_options(-Wno-unused-variable -Wno-unused-function -Wno-deprecated-declarations)
+    add_compile_options(-Wno-unused-parameter)
     add_compile_options(-fanalyzer)
-   # add_compile_definitions(_GNU_SOURCE)  # 这里添加
+
+    #add_compile_definitions(EVENT_SHOW_METHOD=1)
+    add_compile_definitions(USE_DEBUG)
 endif()
 
 # 创建可执行文件
 add_executable(luev ${SOURCES})
+
 
 # 添加头文件搜索路径
 target_include_directories(luev PUBLIC

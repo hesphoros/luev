@@ -70,6 +70,9 @@
         "ev_log.h": "c",
         "ev_signal.h": "c",
         "ev_min_heap.h": "c",
-        "ev_common.h": "c"
+        "ev_common.h": "c",
+        "cstdio": "c",
+        "numeric": "c",
+        "sstream": "c"
     }
 }
