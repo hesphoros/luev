@@ -73,6 +73,7 @@
         "ev_common.h": "c",
         "cstdio": "c",
         "numeric": "c",
-        "sstream": "c"
+        "sstream": "c",
+        "ev_poll.h": "c"
     }
 }

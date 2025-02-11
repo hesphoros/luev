@@ -22,8 +22,7 @@ void client_read_cb(int fd, short event, void *arg);
 int main()
 {
     struct event_base *base = event_base_new();
-    if (base)
-        printf("Hello, luevent and event_base!\n");
+
 
     // 创建一个server socket
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);

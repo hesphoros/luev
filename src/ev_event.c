@@ -10,13 +10,13 @@
 #include "ev_log.h"
 
 // extern const struct eventop selectops;
-// extern const struct eventop pollops;
+extern const struct eventop pollops;
 extern const struct eventop epollops;
 
 
 static const struct eventop * eventops[] = {
 	&epollops,
-// &pollops,
+	&pollops,
 // &selectops
 };
 
@@ -167,10 +167,10 @@ struct event_base *event_base_new(void){
 	if (base->evbase == NULL)
 		event_errx(1, "%s: no event mechanism available", __func__);
 
-	printf("getenv: %s\n",evutil_getenv("EVENT_SHOW_METHOD"));
+
 	// 如果环境变量EVENT_SHOW_METHOD被设置，输出当前使用的事件机制名称
 	if (evutil_getenv("EVENT_SHOW_METHOD"))
-		event_msgx("libevent using: %s\n",
+		event_msgx("libevent using: %s",
 			   base->evsel->name);
 
 	/* allocate a single active event queue */
@@ -485,7 +485,7 @@ event_del(struct event *ev)
 	void *evbase;
 
 	event_debug(("event_del: %p, callback %p",
-		 ev, ev->ev_callback));
+		 ev, (void*)(uintptr_t)ev->ev_callback));
 
 	/* An event without a base has not been added */
 	if (ev->ev_base == NULL)
