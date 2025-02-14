@@ -29,131 +29,131 @@ extern "C"
 #define EV_SIGNAL 0x08  // 信号
 #define EV_PERSIST 0x10 /* Persistant event */
 
-    struct event_base;
-    TAILQ_HEAD(event_list, event);
-    struct event
-    {
-        // 已注册事件链表
-        TAILQ_ENTRY(event)
-        ev_next;
-        // 激活事件链表
-        TAILQ_ENTRY(event)
-        ev_active_next;
-        // 信号事件链表
-        TAILQ_ENTRY(event)
-        ev_signal_next;
+struct event_base;
+TAILQ_HEAD(event_list, event);
+struct event
+{
+    // 已注册事件链表
+    TAILQ_ENTRY(event)
+    ev_next;
+    // 激活事件链表
+    TAILQ_ENTRY(event)
+    ev_active_next;
+    // 信号事件链表
+    TAILQ_ENTRY(event)
+    ev_signal_next;
 
-        // 最小时间堆索引
-        unsigned int min_heap_idx;
-        // 事件基
-        struct event_base *ev_base;
-        // 文件描述符 or 信号
-        int ev_fd;
+    // 最小时间堆索引
+    unsigned int min_heap_idx;
+    // 事件基
+    struct event_base *ev_base;
+    // 文件描述符 or 信号
+    int ev_fd;
 
-        // 事件类型 超时 读写 信号 永久
-        short ev_events;
-        // 事件就绪执行时，调用 ev_callback 的次数 通常为1
-        short ev_ncalls;
-        // 指向 ev_ncalls 的指针，用于在回调函数中删除事件
-        short *ev_pncalls;
+    // 事件类型 超时 读写 信号 永久
+    short ev_events;
+    // 事件就绪执行时，调用 ev_callback 的次数 通常为1
+    short ev_ncalls;
+    // 指向 ev_ncalls 的指针，用于在回调函数中删除事件
+    short *ev_pncalls;
 
-        struct timeval ev_timeout;
+    struct timeval ev_timeout;
 
-        int ev_pri; /* smaller numbers are higher priority */
+    int ev_pri; /* smaller numbers are higher priority */
 
-        /// @brief 回调函数
-        /// @param fd 文件描述符 or 信号
-        /// @param arg 回调函数参数
-        void (*ev_callback)(int, short, void *arg);
-        void *ev_arg;
+    /// @brief 回调函数
+    /// @param fd 文件描述符 or 信号
+    /// @param arg 回调函数参数
+    void (*ev_callback)(int, short, void *arg);
+    void *ev_arg;
 
-        // 回调函数中传递的结果
-        int ev_res; /* result passed to event callback */
+    // 回调函数中传递的结果
+    int ev_res; /* result passed to event callback */
 
-        // 标记 event 信息的字段
-        /* 可能取值
-         * EVLIST_TIMEOUT    // event在time堆中
-         * EVLIST_INSERTED   // event在已注册事件链表中
-         * EVLIST_SIGNAL     // event在信号事件链表中
-         * EVLIST_ACTIVE     // event在激活链表中
-         * EVLIST_INTERNAL   // 内部使用标记
-         * EVLIST_INIT       // event初始化标记
-         */
-        int ev_flags;
-    };
+    // 标记 event 信息的字段
+    /* 可能取值
+      * EVLIST_TIMEOUT    // event在time堆中
+      * EVLIST_INSERTED   // event在已注册事件链表中
+      * EVLIST_SIGNAL     // event在信号事件链表中
+      * EVLIST_ACTIVE     // event在激活链表中
+      * EVLIST_INTERNAL   // 内部使用标记
+      * EVLIST_INIT       // event初始化标记
+      */
+    int ev_flags;
+};
 
-    /*
-     * Key-Value pairs.  Can be used for HTTP headers but also for
-     * query argument parsing.
-     */
-    struct evkeyval
-    {
-        TAILQ_ENTRY(evkeyval)
-        next;
+/*
+  * Key-Value pairs.  Can be used for HTTP headers but also for
+  * query argument parsing.
+  */
+struct evkeyval
+{
+    TAILQ_ENTRY(evkeyval)
+    next;
 
-        char *key;
-        char *value;
-    };
+    char *key;
+    char *value;
+};
 
-    /**
-      Initialize the event API.
+/**
+  Initialize the event API.
 
-      使用 event_base_new() 初始化新的事件库，但不设置 current_base 全局变量。
-      如果仅使用 event_base_new()，则添加的每个事件都必须使用 event_base_set() 设置事件库。
-      @see event_base_set(), event_base_free(), event_init()
-     */
-    struct event_base *event_base_new(void);
+  使用 event_base_new() 初始化新的事件库，但不设置 current_base 全局变量。
+  如果仅使用 event_base_new()，则添加的每个事件都必须使用 event_base_set() 设置事件库。
+  @see event_base_set(), event_base_free(), event_init()
+  */
+struct event_base *event_base_new(void);
 
-    /**
-      Initialize the event API.
+/**
+  Initialize the event API.
 
-      事件 API 需要先使用 event_init() 进行初始化，然后才能使用。
-      设置 current_base 全局变量，表示没有关联基础的事件的默认基础。
+  事件 API 需要先使用 event_init() 进行初始化，然后才能使用。
+  设置 current_base 全局变量，表示没有关联基础的事件的默认基础。
 
-      @see event_base_set(), event_base_new()
-     */
-    struct event_base *event_init(void);
+  @see event_base_set(), event_base_new()
+  */
+struct event_base *event_init(void);
 
-    /**
-      Reinitialized the event base after a fork
+/**
+  Reinitialized the event base after a fork
 
-     某些事件机制无法跨 fork 存活。事件库需要使用 event_reinit() 函数重新初始化。
+  某些事件机制无法跨 fork 存活。事件库需要使用 event_reinit() 函数重新初始化。
 
-      @param base the event base that needs to be re-initialized
-      @return 0 if successful, or -1 if some events could not be re-added.
-      @see event_base_new(), event_init()
-    */
-    int event_reinit(struct event_base *base);
+  @param base the event base that needs to be re-initialized
+  @return 0 if successful, or -1 if some events could not be re-added.
+  @see event_base_new(), event_init()
+*/
+int event_reinit(struct event_base *base);
 
-    /**
-      Loop to process events.
+/**
+  Loop to process events.
 
-        为了处理事件，应用程序需要调用
-        event_dispatch()。此函数仅在发生错误时返回，并且应该
-        替换应用程序的事件核心。
+    为了处理事件，应用程序需要调用
+    event_dispatch()。此函数仅在发生错误时返回，并且应该
+    替换应用程序的事件核心。
 
-      @see event_base_dispatch()
-     */
-    int event_dispatch(void);
+  @see event_base_dispatch()
+  */
+int event_dispatch(void);
 
-    /**
-        解除与 event_base 关联的所有内存分配，并释放该基址。
+/**
+    解除与 event_base 关联的所有内存分配，并释放该基址。
 
-        请注意，此函数不会关闭任何 fds 或释放作为回调参数传递给 event_set 的任何内存。
-      @param eb an event_base to be freed
-     */
+    请注意，此函数不会关闭任何 fds 或释放作为回调参数传递给 event_set 的任何内存。
+  @param eb an event_base to be freed
+  */
 
-    void event_base_free(struct event_base *);
+void event_base_free(struct event_base *);
 
-    /**
-      Threadsafe event dispatching loop.
+/**
+  Threadsafe event dispatching loop.
 
-      @param eb the event_base structure returned by event_init()
-      @see event_init(), event_dispatch()
-     */
-    int event_base_dispatch(struct event_base *);
+  @param eb the event_base structure returned by event_init()
+  @see event_init(), event_dispatch()
+  */
+int event_base_dispatch(struct event_base *);
 
-    int event_base_priority_init(struct event_base *base, int npriorities);
+int event_base_priority_init(struct event_base *base, int npriorities);
 
 /**
      * 准备要添加的事件结构。
@@ -190,7 +190,7 @@ void event_set(struct event *ev, int fd, short events, void (*callback)(int, sho
     */
 int event_base_set(struct event_base *, struct event *);
 
-//TODO:
+
 //event_process_active
 /// @brief 将事件标记为活动状态，并插入到活动队列中
 /// @param ev event_base 结构体的指针
