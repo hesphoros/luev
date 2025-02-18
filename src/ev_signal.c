@@ -56,14 +56,7 @@ evsignal_init(struct event_base *base)
 	// 创建一个UNIX域的socket对，用于信号处理程序与事件循环之间的通信
 	if (evutil_socketpair(
 		    AF_UNIX, SOCK_STREAM, 0, base->sig.ev_signal_pair) == -1) {
-#ifdef WIN32
-		/* Make this nonfatal on win32, where sometimes people
-		   have localhost firewalled. */
-		// 在Windows平台上，如果创建socket对失败，发出警告但不终止程序
-		event_warn("%s: socketpair", __func__);
-#else
 		event_err(1, "%s: socketpair", __func__);
-#endif
 		return -1;
 	}
 
@@ -74,9 +67,10 @@ evsignal_init(struct event_base *base)
 	base->sig.evsignal_caught = 0;
 	memset(&base->sig.evsigcaught, 0, sizeof(sig_atomic_t)*NSIG);
 	/* initialize the queues for all events */
+	/** 初始化每个信号对应的事件队列 */
 	for (i = 0; i < NSIG; ++i)
 		TAILQ_INIT(&base->sig.evsigevents[i]);
-
+		//设置noblock标志，使得信号处理程序可以立即返回
         evutil_make_socket_nonblocking(base->sig.ev_signal_pair[0]);
 
 	event_set(&base->sig.ev_signal, base->sig.ev_signal_pair[1],
@@ -93,11 +87,11 @@ int
 _evsignal_set_handler(struct event_base *base,
 		      int evsignal, void (*handler)(int))
 {
-#ifdef HAVE_SIGACTION
+
 	struct sigaction sa;
-#else
-	ev_sighandler_t sh;
-#endif
+
+
+
 	struct evsignal_info *sig = &base->sig;
 	void *p;
 
@@ -130,7 +124,7 @@ _evsignal_set_handler(struct event_base *base,
 	}
 
 	/* save previous handler and setup new handler */
-#ifdef HAVE_SIGACTION
+
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = handler;
 	sa.sa_flags |= SA_RESTART;
@@ -141,14 +135,6 @@ _evsignal_set_handler(struct event_base *base,
 		free(sig->sh_old[evsignal]);
 		return (-1);
 	}
-#else
-	if ((sh = signal(evsignal, handler)) == SIG_ERR) {
-		event_warn("signal");
-		free(sig->sh_old[evsignal]);
-		return (-1);
-	}
-	*sig->sh_old[evsignal] = sh;
-#endif
 
 	return (0);
 }
