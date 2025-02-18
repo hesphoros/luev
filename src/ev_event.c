@@ -408,11 +408,11 @@ event_add(struct event *ev, const struct timeval *tv)
 
 	event_debug((
 		 "event_add: event: %p, %s%s%scall %p",
-		 ev,
+		 (void*)ev,
 		 ev->ev_events & EV_READ ? "EV_READ " : " ",
 		 ev->ev_events & EV_WRITE ? "EV_WRITE " : " ",
 		 tv ? "EV_TIMEOUT " : " ",
-		 ev->ev_callback));
+		 (void*)(uintptr_t)ev->ev_callback));
 
 	assert(!(ev->ev_flags & ~EVLIST_ALL));
 
@@ -468,7 +468,7 @@ event_add(struct event *ev, const struct timeval *tv)
 
 		event_debug((
 			 "event_add: timeout in %ld seconds, call %p",
-			 tv->tv_sec, ev->ev_callback));
+			 tv->tv_sec, (void*)(uintptr_t)ev->ev_callback));
 
 		event_queue_insert(base, ev, EVLIST_TIMEOUT);
 	}
@@ -485,7 +485,7 @@ event_del(struct event *ev)
 	void *evbase;
 
 	event_debug(("event_del: %p, callback %p",
-		 ev, (void*)(uintptr_t)ev->ev_callback));
+		 (void*)ev, (void*)(uintptr_t)ev->ev_callback));
 
 	/* An event without a base has not been added */
 	if (ev->ev_base == NULL)

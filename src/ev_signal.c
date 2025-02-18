@@ -151,7 +151,7 @@ evsignal_add(struct event *ev)
 	evsignal = EVENT_SIGNAL(ev);
 	assert(evsignal >= 0 && evsignal < NSIG);
 	if (TAILQ_EMPTY(&sig->evsigevents[evsignal])) {
-		event_debug(("%s: %p: changing signal handler", __func__, ev));
+		event_debug(("%s: %p: changing signal handler", __func__, (void*)ev));
 		if (_evsignal_set_handler(
 			    base, evsignal, evsignal_handler) == -1)
 			return (-1);
