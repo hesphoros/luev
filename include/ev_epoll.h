@@ -1,6 +1,13 @@
 #ifndef _EPOLL_H_
 #define _EPOLL_H_
 
+
+/**
+ * @brief 对epoll接口进行初步的封装
+ * @
+ * 
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif

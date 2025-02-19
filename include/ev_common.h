@@ -5,6 +5,14 @@
 extern "C" {
 #endif
 #define _XOPEN_SOURCE 700
+
+/**
+ * @brief Common header file for all the Luev components.
+ * @author hesphoros@gmail.com
+ * @date 2025-02-19
+ * @version 0.1
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
