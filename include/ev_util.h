@@ -53,6 +53,7 @@ const char *evutil_getenv(const char *varname);
 int evutil_socketpair(int family, int type, int protocol, int fd[2]);
 
 
+// only add some to test
 /// @brief 设置socket为非阻塞
 /// @param fd socket文件描述符
 /// @return

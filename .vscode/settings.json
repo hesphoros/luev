@@ -74,6 +74,7 @@
         "cstdio": "c",
         "numeric": "c",
         "sstream": "c",
-        "ev_poll.h": "c"
+        "ev_poll.h": "c",
+        "inet.h": "c"
     }
 }
